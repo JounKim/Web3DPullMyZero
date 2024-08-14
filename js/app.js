@@ -20,7 +20,7 @@ const loader = new GLTFLoader();
 
 const models = [
     { path: 'models/Room2.gltf', position: { x: 0, y: 0, z: 0 } },
-    { path: 'models/dancing.gltf', position: { x: 0, y: 0, z: 40 } },
+    { path: 'models/dancing.gltf', position: { x: 0, y: 0, z: 40 }, scale:{x:2, y:2, z:2} },
     { path: 'models/Flamingo.glb', position: { x: -10, y: 0, z: 0 } }
 ];
 
