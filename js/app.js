@@ -17,19 +17,82 @@ let controls;
 let objToRender = 'dancing';
 
 const loader = new GLTFLoader();
-loader.load(
-	'models/Room2.gltf',
-	function(gltf){
-		object = gltf.scene;
-		scene.add(object);
-	},
-	function(xhr){
-		console.log((xhr.loaded/xhr.total*100) + '% loaded');
-	},
-	function(error){
-		console.error(error);
-	}
-);
+
+const models = [
+    { path: 'models/Room2.gltf', position: { x: 0, y: 0, z: 0 } },
+    { path: 'models/dancing.gltf', position: { x: 0, y: 0, z: 40 } },
+    { path: 'models/Flamingo.glb', position: { x: -10, y: 0, z: 0 } }
+];
+
+let mixers = []; // Array to store animation mixers
+
+
+models.forEach((model) => {
+    loader.load(
+        model.path,
+        function (gltf) {
+            const loadedModel = gltf.scene;
+            loadedModel.position.set(model.position.x, model.position.y, model.position.z);
+            scene.add(loadedModel);
+
+            // If the model has animations, create an AnimationMixer and store it
+            if (gltf.animations && gltf.animations.length > 0) {
+                const mixer = new THREE.AnimationMixer(loadedModel);
+                gltf.animations.forEach((clip) => {
+                    const action = mixer.clipAction(clip);
+                    action.play();
+                });
+                mixers.push(mixer);
+            }
+        },
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        function (error) {
+            console.error(error);
+        }
+    );
+});
+
+// models.forEach((model) => {
+//     loader.load(
+//         model.path,
+//         function (gltf) {
+//             const loadedModel = gltf.scene;
+//             loadedModel.position.set(model.position.x, model.position.y, model.position.z);
+//             scene.add(loadedModel);
+
+//             // If the model has animations, play them
+//             if (gltf.animations && gltf.animations.length) {
+//                 const mixer = new THREE.AnimationMixer(loadedModel);
+//                 gltf.animations.forEach((clip) => {
+//                     const action = mixer.clipAction(clip);
+//                     action.play();
+//                 });
+//             }
+//         },
+//         function (xhr) {
+//             console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+//         },
+//         function (error) {
+//             console.error(error);
+//         }
+//     );
+// });
+
+// loader.load(
+// 	'models/Room2.gltf',
+// 	function(gltf){
+// 		object = gltf.scene;
+// 		scene.add(object);
+// 	},
+// 	function(xhr){
+// 		console.log((xhr.loaded/xhr.total*100) + '% loaded');
+// 	},
+// 	function(error){
+// 		console.error(error);
+// 	}
+// );
 
 // const models1 = new GLTFLoader();
 // models1.load(
@@ -109,10 +172,6 @@ document.getElementById("container3D").appendChild(renderer.domElement);
 //document.body.appendChild( renderer.domElement );
 
 
-
-
-
-
 // renderer.setAnimationLoop( animate );
 
 
@@ -128,7 +187,7 @@ topLight.position.set(500,500,500)
 topLight.castShadow = true;
 scene.add(topLight);
 
-const ambientLight = new THREE.AmbientLight(0x333333, 5);
+const ambientLight = new THREE.AmbientLight(0x333333, 2);
 scene.add(ambientLight);
 
 //캔버스 크기 자동 조절
@@ -141,7 +200,6 @@ window.addEventListener("resize", function() {
 
 // Orbit Control 조절하기
 const controlcam = new OrbitControls(camera, renderer.domElement);
-
 camera.position.set(0,0,140);
 controlcam.enablePan = false;
 controlcam.enableRotate = false;
@@ -149,14 +207,31 @@ controlcam.maxDistance = 140;
 controlcam.update();
 
 
-function animate(){
-	requestAnimationFrame(animate);
-	controlcam.update();
-	
-	renderer.render(scene, camera);
+// Animation Loop
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Update all mixers for animations
+    const delta = clock.getDelta();
+    mixers.forEach((mixer) => mixer.update(delta));
+
+    controlcam.update();
+    renderer.render(scene, camera);
 }
 
+const clock = new THREE.Clock(); // Clock for keeping track of time in the animation
+animate();
 
+
+// // Animation Loop
+// function animate(){
+// 	requestAnimationFrame(animate);
+// 	controlcam.update();
+// 	renderer.render(scene, camera);
+// }
+
+
+// animate();
 
 // function MouseWheel (event){
 // 	var fovMax = 16;
@@ -171,5 +246,5 @@ function animate(){
 
 // window.addEventListener("mousewheel", MouseWheel, false);
 
-animate();
+
 
