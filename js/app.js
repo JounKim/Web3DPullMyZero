@@ -54,66 +54,6 @@ models.forEach((model) => {
     );
 });
 
-// models.forEach((model) => {
-//     loader.load(
-//         model.path,
-//         function (gltf) {
-//             const loadedModel = gltf.scene;
-//             loadedModel.position.set(model.position.x, model.position.y, model.position.z);
-//             scene.add(loadedModel);
-
-//             // If the model has animations, play them
-//             if (gltf.animations && gltf.animations.length) {
-//                 const mixer = new THREE.AnimationMixer(loadedModel);
-//                 gltf.animations.forEach((clip) => {
-//                     const action = mixer.clipAction(clip);
-//                     action.play();
-//                 });
-//             }
-//         },
-//         function (xhr) {
-//             console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-//         },
-//         function (error) {
-//             console.error(error);
-//         }
-//     );
-// });
-
-// loader.load(
-// 	'models/Room2.gltf',
-// 	function(gltf){
-// 		object = gltf.scene;
-// 		scene.add(object);
-// 	},
-// 	function(xhr){
-// 		console.log((xhr.loaded/xhr.total*100) + '% loaded');
-// 	},
-// 	function(error){
-// 		console.error(error);
-// 	}
-// );
-
-// const models1 = new GLTFLoader();
-// models1.load(
-// 	'models/dancing.gltf', (models1) => {
-// 		this._mixer = new THREE.AnimationMixer(gltf.scene);
-// 		const idle = this._mixer.clipAction(models1.animations[0]);
-// 		idle.play();
-// 	},
-
-// 	function(gltf){
-// 		models1 = gltf.scene;
-// 		scene.add(models1);
-// 	},
-// 	function(xhr){
-// 		console.log((xhr.loaded/xhr.total*100) + '% loaded');
-// 	},
-// 	function(error){
-// 		console.error(error);
-// 	}
-// );
-
 
 //사운드 업로드
 
@@ -129,37 +69,6 @@ loadersound.load('audio/ShowMusic.mp3', (buffer) => {
 	sound.play(); 
 });
 
-// loader.add(sound);
-
-// initializeAudio_() {
-// 	this.listener_ = new THREE.AudioListener();
-// 	this.camera_.add(this.listener_);
-
-// 	const sound = new THREE.PositionalAudio(this.listener_);
-// 	const loadersound = new THREE.AudioLoader();
-// 	loadersound.load('audio/ShowMusic.mp3', (buffer) => {
-// 		sound.setBuffer(buffer);
-// 		sound.setVolume(1);
-// 		sound.setRefDistance(1);
-// 		sound.play();
-// 	});
-
-// 	this.loader.add(sound);
-// };
-
-// loader.load(
-// 	'models/Flamingo.glb',
-// 	function(gltf2){
-// 		object = gltf2.scene;
-// 		scene.add(object);
-// 	},
-// 	function(xhr){
-// 		console.log((xhr.loaded/xhr.total*100) + '% loaded');
-// 	},
-// 	function(error){
-// 		console.error(error);
-// 	}
-// );
 
 
 //랜더러
@@ -171,14 +80,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById("container3D").appendChild(renderer.domElement);
 //document.body.appendChild( renderer.domElement );
 
-
-// renderer.setAnimationLoop( animate );
-
-
-// const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-// const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-// const cube = new THREE.Mesh( geometry, material );
-// scene.add( cube );
 
 
 // 조명 넣기
@@ -221,30 +122,6 @@ function animate() {
 
 const clock = new THREE.Clock(); // Clock for keeping track of time in the animation
 animate();
-
-
-// // Animation Loop
-// function animate(){
-// 	requestAnimationFrame(animate);
-// 	controlcam.update();
-// 	renderer.render(scene, camera);
-// }
-
-
-// animate();
-
-// function MouseWheel (event){
-// 	var fovMax = 16;
-// 	var fovMin = 14;
-
-// 	camera.fov -= THREE.MOUSE.DOLLY * 0.05;
-// 	console.log(THREE.MOUSE.DOLLY);
-// 	camera.fov = Math.max(Math.min(camera.fov, fovMax), fovMin);
-// 	camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, window.innerWidth/window.innerHeight, camera.near, camera.far);
-	
-// }
-
-// window.addEventListener("mousewheel", MouseWheel, false);
 
 
 
