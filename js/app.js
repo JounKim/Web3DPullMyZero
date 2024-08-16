@@ -4,28 +4,51 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 console.log(THREE);
 
-//장면
+// Scene
 const scene = new THREE.Scene();
 
-//카메라
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100000 );
+// Camera
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
 
+// Renderer
+const renderer = new THREE.WebGLRenderer({ alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById("container3D").appendChild(renderer.domElement);
 
-//모델 업로드
-let object;
-let controls;
-let objToRender = 'dancing';
+// Lighting
+const topLight = new THREE.DirectionalLight(0xffffff, 1);
+topLight.position.set(500, 500, 500);
+topLight.castShadow = true;
+scene.add(topLight);
 
+const ambientLight = new THREE.AmbientLight(0x333333, 2);
+scene.add(ambientLight);
+
+// Raycaster and Mouse Vector
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+let hover = false;
+
+// Orbit Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+camera.position.set(0, 0, 140);
+controls.enablePan = false;
+controls.enableRotate = false;
+controls.maxDistance = 140;
+controls.update();
+
+// Models and Mixers
 const loader = new GLTFLoader();
-
 const models = [
-    { path: 'models/Room2.gltf', position: { x: 0, y: 0, z: 0 } },
-    { path: 'models/dancing.gltf', position: { x: 0, y: 0, z: 40 }, scale:{x:2, y:2, z:2} },
-    { path: 'models/Flamingo.glb', position: { x: -10, y: 0, z: 0 } }
+    { path: 'models/Room2.gltf', position: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } },
+    { path: 'models/dancing.gltf', position: { x: -3, y: -9, z: 70 }, scale: { x: 8, y: 8, z: 8 } },
+    { path: 'models/HipHopDance.gltf', position: { x: -3, y: -9, z: 110 }, scale: { x: 8, y: 8, z: 8 } },
+    { path: 'models/RumbaDance.gltf', position: { x: -3, y: -9, z: 30 }, scale: { x: 8, y: 8, z: 8 } }
 ];
 
 let mixers = []; // Array to store animation mixers
-
+let loadedModels = []; // Array to store loaded models
 
 models.forEach((model) => {
     loader.load(
@@ -33,7 +56,9 @@ models.forEach((model) => {
         function (gltf) {
             const loadedModel = gltf.scene;
             loadedModel.position.set(model.position.x, model.position.y, model.position.z);
+            loadedModel.scale.set(model.scale.x, model.scale.y, model.scale.z);
             scene.add(loadedModel);
+            loadedModels.push(loadedModel); // Store the model for raycasting
 
             // If the model has animations, create an AnimationMixer and store it
             if (gltf.animations && gltf.animations.length > 0) {
@@ -49,64 +74,26 @@ models.forEach((model) => {
             console.log((xhr.loaded / xhr.total * 100) + '% loaded');
         },
         function (error) {
-            console.error(error);
+            console.error('An error occurred while loading the model', error);
         }
     );
 });
 
+// Mousemove Event Listener
+window.addEventListener('mousemove', onMouseMove, false);
 
-//사운드 업로드
+function onMouseMove(event) {
+    // Calculate mouse position in normalized device coordinates
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+}
 
-const listener_ = new THREE.AudioListener();
-camera.add(listener_);
-
-const sound = new THREE.PositionalAudio(listener_);
-const loadersound = new THREE.AudioLoader();
-loadersound.load('audio/ShowMusic.mp3', (buffer) => {
-	sound.setBuffer(buffer);
-	sound.setVolume(1);
-	sound.setRefDistance(10);
-	sound.play(); 
+// Handle Window Resize
+window.addEventListener("resize", function () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-
-
-//랜더러
-const renderer = new THREE.WebGLRenderer({alpha: true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-
-//캔버스라고 했는데 나는 컨테이너 (html에 div로 들어가있음)
-document.getElementById("container3D").appendChild(renderer.domElement);
-//document.body.appendChild( renderer.domElement );
-
-
-
-// 조명 넣기
-const topLight = new THREE.DirectionalLight(0xffffff, 1);
-topLight.position.set(500,500,500)
-topLight.castShadow = true;
-scene.add(topLight);
-
-const ambientLight = new THREE.AmbientLight(0x333333, 2);
-scene.add(ambientLight);
-
-//캔버스 크기 자동 조절
-window.addEventListener("resize", function() {
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-
-// Orbit Control 조절하기
-const controlcam = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0,0,140);
-controlcam.enablePan = false;
-controlcam.enableRotate = false;
-controlcam.maxDistance = 140;
-controlcam.update();
-
 
 // Animation Loop
 function animate() {
@@ -116,12 +103,50 @@ function animate() {
     const delta = clock.getDelta();
     mixers.forEach((mixer) => mixer.update(delta));
 
-    controlcam.update();
+    controls.update();
+
+    // Update the raycaster
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calculate objects intersecting the raycaster
+    const intersects = raycaster.intersectObjects(loadedModels, true);
+
+    if (intersects.length > 0) {
+        hover = true;
+        // let intersectedObject = intersects[0].object;
+        // if (intersectedObject.userData.mixer) {
+        //     intersectedObject.userData.mixer.timeScale = 0; // Pause the animation
+        // }
+    } else {
+        hover = false;
+        // // Reset animation speed when the mouse is not hovering over any object
+        // loadedModels.forEach((model) => {
+        //     if (model.userData.mixer) {
+        //         model.userData.mixer.timeScale = 1; // Resume the animation
+        //     }
+        // });
+    }
+
+    if(hover){
+        
+        let intersectedObject = intersects[0].object;
+        if (intersectedObject.userData.mixer) {
+            intersectedObject.userData.mixer.timeScale = 0; // Pause the animation
+            intersectedObject.material.color.set(0xffff00);
+        }
+    }
+    if(!hover) {
+        
+        loadedModels.forEach((model) => {
+            if (model.userData.mixer) {
+                model.userData.mixer.timeScale = 1; // Resume the animation
+                model.material.color.set(0xffffff);
+            }
+        });
+    }
+
     renderer.render(scene, camera);
 }
 
 const clock = new THREE.Clock(); // Clock for keeping track of time in the animation
 animate();
-
-
-
