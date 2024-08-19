@@ -44,7 +44,9 @@ const models = [
     { path: 'models/Room2.gltf', position: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } },
     { path: 'models/dancing.gltf', position: { x: -3, y: -9, z: 70 }, scale: { x: 8, y: 8, z: 8 } },
     { path: 'models/HipHopDance.gltf', position: { x: -3, y: -9, z: 110 }, scale: { x: 8, y: 8, z: 8 } },
-    { path: 'models/RumbaDance.gltf', position: { x: -3, y: -9, z: 30 }, scale: { x: 8, y: 8, z: 8 } }
+    { path: 'models/RumbaDance.gltf', position: { x: -3, y: -9, z: 30 }, scale: { x: 8, y: 8, z: 8 } },
+    { path: 'models/ArrowLeft.gltf', position: { x: -8.5, y: 0, z: -12 }, scale: { x: 0.5, y: 0.5, z: 0.5 } },
+    { path: 'models/ArrowRight.gltf', position: { x: 8.5, y: 0, z: -12 }, scale: { x: 0.5, y: 0.5, z: 0.5 } }
 ];
 
 let mixers = []; // Array to store animation mixers
