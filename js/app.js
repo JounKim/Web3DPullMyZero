@@ -28,7 +28,7 @@ scene.add(ambientLight);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-let hover = false;
+let previousHover = null; // Track the previously hovered model
 
 // Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -37,6 +37,18 @@ controls.enablePan = false;
 controls.enableRotate = false;
 controls.maxDistance = 140;
 controls.update();
+
+//사운드 업로드
+const listener_ = new THREE.AudioListener();
+camera.add(listener_);
+const sound = new THREE.PositionalAudio(listener_);
+const loadersound = new THREE.AudioLoader();
+loadersound.load('audio/ShowMusic.mp3', (buffer) => {
+	sound.setBuffer(buffer);
+	sound.setVolume(1);
+	sound.setRefDistance(10);
+	sound.play(); 
+});
 
 // Models and Mixers
 const loader = new GLTFLoader();
@@ -62,13 +74,21 @@ models.forEach((model) => {
             scene.add(loadedModel);
             loadedModels.push(loadedModel); // Store the model for raycasting
 
+            // Traverse the entire model hierarchy and store a reference to the loadedModel
+            loadedModel.traverse((child) => {
+                child.userData.parentModel = loadedModel;
+            });
+
             // If the model has animations, create an AnimationMixer and store it
             if (gltf.animations && gltf.animations.length > 0) {
                 const mixer = new THREE.AnimationMixer(loadedModel);
-                gltf.animations.forEach((clip) => {
-                    const action = mixer.clipAction(clip);
-                    action.play();
-                });
+                const actions = gltf.animations.map((clip) => mixer.clipAction(clip));
+                actions[0].play(); // Play the first animation by default
+                
+                loadedModel.userData.mixer = mixer; // Store the mixer in the model's userData
+                loadedModel.userData.actions = actions; // Store the actions for switching animations
+                loadedModel.userData.currentAction = actions[0]; // Track the current animation
+                
                 mixers.push(mixer);
             }
         },
@@ -97,6 +117,18 @@ window.addEventListener("resize", function () {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Function to lerp between animations
+function switchAnimation(intersectedObject, newAction) {
+    const mixer = intersectedObject.userData.mixer;
+    const currentAction = intersectedObject.userData.currentAction;
+
+    if (currentAction !== newAction) {
+        currentAction.crossFadeTo(newAction, 0.5, true); // Smooth transition between animations
+        newAction.play();
+        intersectedObject.userData.currentAction = newAction; // Update the current action
+    }
+}
+
 // Animation Loop
 function animate() {
     requestAnimationFrame(animate);
@@ -114,39 +146,34 @@ function animate() {
     const intersects = raycaster.intersectObjects(loadedModels, true);
 
     if (intersects.length > 0) {
-        hover = true;
-        // let intersectedObject = intersects[0].object;
-        // if (intersectedObject.userData.mixer) {
-        //     intersectedObject.userData.mixer.timeScale = 0; // Pause the animation
-        // }
-    } else {
-        hover = false;
-        // // Reset animation speed when the mouse is not hovering over any object
-        // loadedModels.forEach((model) => {
-        //     if (model.userData.mixer) {
-        //         model.userData.mixer.timeScale = 1; // Resume the animation
-        //     }
-        // });
-    }
-
-    if(hover){
+        // Get the original loaded model via userData reference
+        let intersectedObject = intersects[0].object.userData.parentModel;
         
-        let intersectedObject = intersects[0].object;
-        if (intersectedObject.userData.mixer) {
-            intersectedObject.userData.mixer.timeScale = 0; // Pause the animation
-            intersectedObject.material.color.set(0xffff00);
+        if (previousHover !== intersectedObject) {
+            // Switch back to the default animation for the previous model if we hover over a new model
+            if (previousHover && previousHover.userData.mixer) {
+                switchAnimation(previousHover, previousHover.userData.actions[0]);
+            }
+
+            // Change to a different animation for the currently hovered model
+            if (intersectedObject.userData && intersectedObject.userData.mixer) {
+                const nextActionIndex = (intersectedObject.userData.actions.indexOf(intersectedObject.userData.currentAction) + 1) % intersectedObject.userData.actions.length;
+                switchAnimation(intersectedObject, intersectedObject.userData.actions[nextActionIndex]);
+            }
+
+            previousHover = intersectedObject;
+            
+            // Print the name of the hovered model to the console
+            console.log(`Hovered over model: ${intersectedObject.name}`);
+        }
+    } else {
+        // If no objects are hovered, resume the previous model's default animation
+        if (previousHover && previousHover.userData.mixer) {
+            switchAnimation(previousHover, previousHover.userData.actions[0]);
+            previousHover = null; // Clear previous hover
         }
     }
-    if(!hover) {
-        
-        loadedModels.forEach((model) => {
-            if (model.userData.mixer) {
-                model.userData.mixer.timeScale = 1; // Resume the animation
-                model.material.color.set(0xffffff);
-            }
-        });
-    }
-
+    
     renderer.render(scene, camera);
 }
 
